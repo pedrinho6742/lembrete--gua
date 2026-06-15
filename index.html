@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lembrete de Água 💧</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #e0f7fa;
+            color: #006064;
+            padding: 50px 20px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #00acc1;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Monitor de Hidratação 💧</h1>
+    <p>Clique no botão abaixo para ativar as notificações no seu celular:</p>
+    <button onclick="ativarNotificacoes()">Ativar Lembrete</button>
+
+    <script>
+        // Registra o Service Worker (necessário para notificações em PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Registrado!'));
+        }
+
+        function ativarNotificacoes() {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    alert('Pronto! Notificações ativadas.');
+                    verificarEEnviarNotificacao();
+                } else {
+                    alert('Você precisa permitir as notificações para o app funcionar.');
+                }
+            });
+        }
+
+        function verificarEEnviarNotificacao() {
+            if (Notification.permission !== 'granted') return;
+
+            const COOLDOWN = 3 * 60 * 60 * 1000; // 3 horas em milissegundos
+            const agora = Date.now();
+            const ultimaNotificacao = localStorage.getItem('ultimaNotificacao') || 0;
+
+            if (agora - ultimaNotificacao > COOLDOWN) {
+                // Dispara a notificação através do Service Worker
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification('Hora de Hidratação! 💧', {
+                        body: 'olá, você apareceu. Que tal beber um copo de água agora?',
+                        icon: 'https://cdn-icons-png.flaticon.com/512/3105/3105803.png'
+                    });
+                });
+                // Salva o horário atual como o último disparo
+                localStorage.setItem('ultimaNotificacao', agora);
+            }
+        }
+
+        // O TRUQUE: Detecta quando o usuário acende a tela e olha para o navegador
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                verificarEEnviarNotificacao();
+            }
+        });
+    </script>
+</body>
+</html>
